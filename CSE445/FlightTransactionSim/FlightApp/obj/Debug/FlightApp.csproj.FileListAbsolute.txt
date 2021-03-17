@@ -1,0 +1,7 @@
+C:\Users\zak\source\repos\FlightApp\FlightApp\obj\Debug\FlightApp.csprojAssemblyReference.cache
+C:\Users\zak\source\repos\FlightApp\FlightApp\obj\Debug\FlightApp.csproj.CoreCompileInputs.cache
+C:\Users\zak\source\repos\FlightApp\FlightApp\bin\Debug\FlightApp.exe.config
+C:\Users\zak\source\repos\FlightApp\FlightApp\bin\Debug\FlightApp.exe
+C:\Users\zak\source\repos\FlightApp\FlightApp\bin\Debug\FlightApp.pdb
+C:\Users\zak\source\repos\FlightApp\FlightApp\obj\Debug\FlightApp.exe
+C:\Users\zak\source\repos\FlightApp\FlightApp\obj\Debug\FlightApp.pdb
