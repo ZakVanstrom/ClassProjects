@@ -1,8 +1,6 @@
-/*
- * Copyright (C) Rida Bazzi, 2016
- *
- * Do not share this file with anyone
- */
+// Zak Vanstrom - 1214299670
+// CSE 340. July 15, 2021.
+
 #ifndef __LEXER__H__
 #define __LEXER__H__
 
@@ -10,6 +8,8 @@
 #include <string>
 
 #include "inputbuf.h"
+
+using namespace std;
 
 // ------- token types -------------------
 
@@ -19,7 +19,12 @@ typedef enum { END_OF_FILE = 0,
     EQUAL, COLON, COMMA, SEMICOLON,
     LBRAC, RBRAC, LPAREN, RPAREN,
     NOTEQUAL, GREATER, LESS, LTEQ, GTEQ,
-    DOT, NUM, ID, ERROR // TODO: Add labels for new token types here
+    DOT, NUM, ID,
+        // New additions
+        REALNUM,
+        BASE08NUM,
+        BASE16NUM,
+        ERROR
 } TokenType;
 
 class Token {
@@ -48,6 +53,9 @@ class LexicalAnalyzer {
     TokenType FindKeywordIndex(std::string);
     Token ScanIdOrKeyword();
     Token ScanNumber();
+    Token ScanHexNumber();
+    Token ScanOctNumber();
+    void ReturnChars(string str);
 };
 
 #endif  //__LEXER__H__

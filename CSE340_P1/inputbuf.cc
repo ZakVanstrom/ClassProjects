@@ -1,8 +1,6 @@
-/*
- * Copyright (C) Rida Bazzi, 2016
- *
- * Do not share this file with anyone
- */
+// Zak Vanstrom - 1214299670
+// CSE 340. July 15, 2021.
+
 #include <iostream>
 #include <istream>
 #include <vector>

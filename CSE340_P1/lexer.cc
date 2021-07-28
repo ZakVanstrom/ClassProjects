@@ -1,8 +1,6 @@
-/*
- * Copyright (C) Rida Bazzi, 2016
- *
- * Do not share this file with anyone
- */
+// Zak Vanstrom - 1214299670
+// CSE 340. July 15, 2021.
+
 #include <iostream>
 #include <istream>
 #include <vector>
@@ -20,7 +18,12 @@ string reserved[] = { "END_OF_FILE",
     "EQUAL", "COLON", "COMMA", "SEMICOLON",
     "LBRAC", "RBRAC", "LPAREN", "RPAREN",
     "NOTEQUAL", "GREATER", "LESS", "LTEQ", "GTEQ",
-    "DOT", "NUM", "ID", "ERROR" // TODO: Add labels for new token types here (as string)
+    "DOT", "NUM", "ID", 
+        // New additions
+        "REALNUM",
+        "BASE08NUM",
+        "BASE16NUM",
+        "ERROR"
 };
 
 #define KEYWORDS_COUNT 5
@@ -82,7 +85,7 @@ TokenType LexicalAnalyzer::FindKeywordIndex(string s)
 }
 
 Token LexicalAnalyzer::ScanNumber()
-{
+{   
     char c;
 
     input.GetChar(c);
@@ -99,8 +102,35 @@ Token LexicalAnalyzer::ScanNumber()
                 input.UngetChar(c);
             }
         }
-        // TODO: You can check for REALNUM, BASE08NUM and BASE16NUM here!
         tmp.token_type = NUM;
+
+        char t1, t2;
+        input.GetChar(t1);
+
+        // Real Num Check
+        if(t1 == '.' && !input.EndOfInput()) {
+            input.GetChar(t2);
+            if (!input.EndOfInput() && isdigit(t2)) {
+                tmp.lexeme+=t1;
+                tmp.lexeme+=t2;
+
+                input.GetChar(t2);
+                while (!input.EndOfInput() && isdigit(t2)) {
+                    tmp.lexeme += t2;
+                    input.GetChar(t2);
+                }
+
+                tmp.token_type = REALNUM;
+            }
+            else {
+                input.UngetChar(t2);
+                input.UngetChar(t1);
+            }
+        }
+        else {
+            input.UngetChar(t1);
+        }
+        
         tmp.line_no = line_no;
         return tmp;
     } else {
@@ -112,6 +142,93 @@ Token LexicalAnalyzer::ScanNumber()
         tmp.line_no = line_no;
         return tmp;
     }
+}
+
+void LexicalAnalyzer::ReturnChars(string str) {
+    for(int i = str.length()-1; i >= 0 ; i--) {
+        input.UngetChar(str[i]);
+    }
+}
+
+Token LexicalAnalyzer::ScanOctNumber() {
+    char c;
+    input.GetChar(c);
+    tmp.lexeme = "";
+
+    while (c=='0'||c=='1'||c=='2'||c=='3'||c=='4'||c=='5'||c=='6'||c=='7'||c=='8') {
+        tmp.lexeme += c;
+        input.GetChar(c);
+    }
+
+    tmp.lexeme += c;
+    if(c == 'x')
+        input.GetChar(c);
+    else {
+        ReturnChars(tmp.lexeme);
+        tmp.lexeme = "";
+        return tmp;
+    }
+
+    tmp.lexeme += c;
+    if(c == '0') {
+        input.GetChar(c);
+    }
+    else {
+        ReturnChars(tmp.lexeme);
+        tmp.lexeme = "";
+        return tmp;
+    }
+
+    tmp.lexeme += c;
+    if(c != '8') {
+        ReturnChars(tmp.lexeme);
+        tmp.lexeme = "";
+        return tmp;
+    }
+    
+    tmp.token_type = BASE08NUM;
+    return tmp;
+}
+
+Token LexicalAnalyzer::ScanHexNumber() {
+    char c;
+    input.GetChar(c);
+    tmp.lexeme = "";
+
+    while (c=='0'||c=='1'||c=='2'||c=='3'||c=='4'||c=='5'||c=='6'||c=='7'||c=='8'||c=='9'||c=='A'||c=='B'||c=='C'||c=='D'||c=='E'||c=='F') {
+        tmp.lexeme += c;
+        input.GetChar(c);
+    }
+    
+    tmp.lexeme += c;
+    if(c == 'x') {
+        input.GetChar(c);
+    }
+    else {
+        ReturnChars(tmp.lexeme);
+        tmp.lexeme = "";
+        return tmp;
+    }
+
+    tmp.lexeme += c;
+    if(c == '1') {
+        input.GetChar(c);
+    }
+    else {
+        ReturnChars(tmp.lexeme);
+        tmp.lexeme = "";
+        return tmp;
+    }
+
+    tmp.lexeme += c;
+    if(c != '6') {
+        ReturnChars(tmp.lexeme);
+        tmp.lexeme = "";
+        return tmp;
+    }
+
+    tmp.token_type = BASE16NUM;
+    return tmp;
 }
 
 Token LexicalAnalyzer::ScanIdOrKeyword()
@@ -247,17 +364,33 @@ Token LexicalAnalyzer::GetToken()
             }
             return tmp;
         default:
+            if(c=='1'||c=='2'||c=='3'||c=='4'||c=='5'||c=='6'||c=='7'||c=='8') {
+                input.UngetChar(c);
+                Token result = ScanOctNumber();
+                if(result.lexeme != "") {
+                    return result;
+                };
+            }
+            if(c=='1'||c=='2'||c=='3'||c=='4'||c=='5'||c=='6'||c=='7'||c=='8'||c=='9'||c=='A'||c=='B'||c=='C'||c=='D'||c=='E'||c=='F'){
+                input.UngetChar(c);
+                Token result = ScanHexNumber();
+                if(result.lexeme != "") {
+                    return result;
+                };
+            }
             if (isdigit(c)) {
                 input.UngetChar(c);
                 return ScanNumber();
-            } else if (isalpha(c)) {
+            }
+            if (isalpha(c)) {
                 input.UngetChar(c);
                 return ScanIdOrKeyword();
-            } else if (input.EndOfInput())
+            }
+            if (input.EndOfInput())
                 tmp.token_type = END_OF_FILE;
-            else
-                tmp.token_type = ERROR;
-
+                return tmp;
+            
+            tmp.token_type = ERROR;
             return tmp;
     }
 }
