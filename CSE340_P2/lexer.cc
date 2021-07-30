@@ -18,125 +18,76 @@ string reserved[] = { "END_OF_FILE",
     "ID", "ERROR"
 };
 
-#define KEYWORDS_COUNT 5
-string keyword[] = { "IF", "WHILE", "DO", "THEN", "PRINT" };
+#define KEYWORDS_COUNT 2
+string keyword[] = { "public", "private"};
 
-void Token::Print()
-{
-    cout << "{" << this->lexeme << " , "
-         << reserved[(int) this->token_type] << " , "
-         << this->line_no << "}\n";
-}
-
-LexicalAnalyzer::LexicalAnalyzer()
-{
-    this->line_no = 1;
+LexicalAnalyzer::LexicalAnalyzer() {
     tmp.lexeme = "";
-    tmp.line_no = 1;
     tmp.token_type = ERROR;
 }
 
-bool LexicalAnalyzer::SkipSpace()
-{
+bool LexicalAnalyzer::SkipSpace() {
     char c;
     bool space_encountered = false;
 
     input.GetChar(c);
-    line_no += (c == '\n');
 
     while (!input.EndOfInput() && isspace(c)) {
         space_encountered = true;
         input.GetChar(c);
-        line_no += (c == '\n');
     }
 
-    if (!input.EndOfInput()) {
+    if (!input.EndOfInput())
         input.UngetChar(c);
-    }
+
     return space_encountered;
 }
 
-bool LexicalAnalyzer::SkipComment()
-{
+bool LexicalAnalyzer::SkipComment() {
     char c;
 
     // Check first character as '/'
     input.GetChar(c);
-    line_no += (c == '\n');
     if (input.EndOfInput() || c != '/') {
         input.UngetChar(c);
-        return false;   
+        return false;
     }
-    
+
     // Check second character as '/'
     input.GetChar(c);
-    line_no += (c == '\n');
-    if(input.EndOfInput() || c != '/') {
+    if(c != '/') {
         input.UngetChar(c);
         input.UngetChar('/');
         return false;
     }
 
-    while(!input.EndOfInput() && c != '\n') {
+    while(!input.EndOfInput() && c != '\n')
         input.GetChar(c);
-    }
+
+
+    if(input.EndOfInput() || c == '\n')
+    	input.UngetChar(c);
 
     return true;
 }
 
-bool LexicalAnalyzer::IsKeyword(string s)
-{
+bool LexicalAnalyzer::IsKeyword(string s) {
     for (int i = 0; i < KEYWORDS_COUNT; i++) {
-        if (s == keyword[i]) {
+        if (s == keyword[i])
             return true;
-        }
     }
     return false;
 }
 
-TokenType LexicalAnalyzer::FindKeywordIndex(string s)
-{
+TokenType LexicalAnalyzer::FindKeywordIndex(string s) {
     for (int i = 0; i < KEYWORDS_COUNT; i++) {
-        if (s == keyword[i]) {
+        if (s == keyword[i])
             return (TokenType) (i + 1);
-        }
     }
     return ERROR;
 }
 
-Token LexicalAnalyzer::ScanNumber()
-{
-    char c;
-
-    input.GetChar(c);
-    if (isdigit(c)) {
-        if (c == '0') {
-            tmp.lexeme = "0";
-        } else {
-            tmp.lexeme = "";
-            while (!input.EndOfInput() && isdigit(c)) {
-                tmp.lexeme += c;
-                input.GetChar(c);
-            }
-            if (!input.EndOfInput()) {
-                input.UngetChar(c);
-            }
-        }
-        tmp.line_no = line_no;
-        return tmp;
-    } else {
-        if (!input.EndOfInput()) {
-            input.UngetChar(c);
-        }
-        tmp.lexeme = "";
-        tmp.token_type = ERROR;
-        tmp.line_no = line_no;
-        return tmp;
-    }
-}
-
-Token LexicalAnalyzer::ScanIdOrKeyword()
-{
+Token LexicalAnalyzer::ScanAlpha() {
     char c;
     input.GetChar(c);
 
@@ -146,53 +97,25 @@ Token LexicalAnalyzer::ScanIdOrKeyword()
             tmp.lexeme += c;
             input.GetChar(c);
         }
-        if (!input.EndOfInput()) {
+        if (!input.EndOfInput())
             input.UngetChar(c);
-        }
-        tmp.line_no = line_no;
         if (IsKeyword(tmp.lexeme))
             tmp.token_type = FindKeywordIndex(tmp.lexeme);
         else
             tmp.token_type = ID;
     } else {
-        if (!input.EndOfInput()) {
+        if (!input.EndOfInput())
             input.UngetChar(c);
-        }
         tmp.lexeme = "";
         tmp.token_type = ERROR;
     }
+
     return tmp;
 }
 
-// you should unget tokens in the reverse order in which they
-// are obtained. If you execute
-//
-//    t1 = lexer.GetToken();
-//    t2 = lexer.GetToken();
-//    t3 = lexer.GetToken();
-//
-// in this order, you should execute
-//
-//    lexer.UngetToken(t3);
-//    lexer.UngetToken(t2);
-//    lexer.UngetToken(t1);
-//
-// if you want to unget all three tokens. Note that it does not
-// make sense to unget t1 without first ungetting t2 and t3
-//
-TokenType LexicalAnalyzer::UngetToken(Token tok)
-{
-    tokens.push_back(tok);;
-    return tok.token_type;
-}
-
-Token LexicalAnalyzer::GetToken()
-{
+Token LexicalAnalyzer::GetToken() {
     char c;
 
-    // if there are tokens that were previously
-    // stored due to UngetToken(), pop a token and
-    // return it without reading from input
     if (!tokens.empty()) {
         tmp = tokens.back();
         tokens.pop_back();
@@ -202,26 +125,38 @@ Token LexicalAnalyzer::GetToken()
     while(SkipSpace() || SkipComment()) {
     }
 
-    tmp.lexeme = "";
-    tmp.line_no = line_no;
     input.GetChar(c);
+    tmp.lexeme = "";
+
     switch (c) {
         case '=':
             tmp.token_type = EQUAL;
+            tmp.lexeme = "=";
+            return tmp;
         case ':':
             tmp.token_type = COLON;
+            tmp.lexeme = ":";
+            return tmp;
         case ',':
             tmp.token_type = COMMA;
+            tmp.lexeme = ",";
+            return tmp;
         case ';':
             tmp.token_type = SEMICOLON;
+            tmp.lexeme = ";";
+            return tmp;
         case '{':
             tmp.token_type = LBRACE;
+            tmp.lexeme = "{";
+            return tmp;
         case '}':
             tmp.token_type = RBRACE;
+            tmp.lexeme = "}";
+            return tmp;
         default:
             if (isalpha(c)) {
                 input.UngetChar(c);
-                return ScanIdOrKeyword();
+                return ScanAlpha();
             } else if (input.EndOfInput())
                 tmp.token_type = END_OF_FILE;
             else
@@ -231,16 +166,32 @@ Token LexicalAnalyzer::GetToken()
     }
 }
 
-int main()
-{
+int main() {
     LexicalAnalyzer lexer;
     Token token;
+    vector<Token> tokenVector;
 
-    token = lexer.GetToken();
-    token.Print();
-    while (token.token_type != END_OF_FILE)
-    {
-        token = lexer.GetToken();
-        token.Print();
+    do {
+    	token = lexer.GetToken();
+
+        /* handling empty file
+        if(tokenVector.size() == 0 && token.token_type == END_OF_FILE) {
+            cout << "Error: Insufficient Arguments";
+            return -1;
+        }
+        */
+
+    	tokenVector.push_back(token);
+
+        // handling token error
+        if(token.token_type == ERROR) {
+        	std::cout << "Syntax Error\n";
+        	return -1;
+        }
+    }
+    while (token.token_type != END_OF_FILE);
+
+    for(int i = 0; i < tokenVector.size(); i++){
+    	// std::cout << "{ " << tokenVector.at(i).lexeme << " , " << reserved[tokenVector.at(i).token_type] << " }\n";
     }
 }

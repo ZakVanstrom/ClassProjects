@@ -36,9 +36,3 @@ void InputBuffer::GetChar(char& c)
     }
 }
 
-string InputBuffer::UngetString(string s)
-{
-    for (int i = s.size()-1; i >= 0; i--)
-        input_buffer.push_back(s[i);
-    return s;
-}

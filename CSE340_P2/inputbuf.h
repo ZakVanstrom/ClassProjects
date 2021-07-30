@@ -10,7 +10,6 @@ class InputBuffer {
   public:
     void GetChar(char&);
     char UngetChar(char);
-    std::string UngetString(std::string);
     bool EndOfInput();
 
   private:

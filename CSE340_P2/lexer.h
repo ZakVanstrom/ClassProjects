@@ -21,8 +21,6 @@ typedef enum { END_OF_FILE = 0,
 
 class Token {
   public:
-    void Print();
-
     std::string lexeme;
     TokenType token_type;
     int line_no;
@@ -31,12 +29,10 @@ class Token {
 class LexicalAnalyzer {
   public:
     Token GetToken();
-    TokenType UngetToken(Token);
     LexicalAnalyzer();
 
   private:
     std::vector<Token> tokens;
-    int line_no;
     Token tmp;
     InputBuffer input;
 
@@ -44,8 +40,7 @@ class LexicalAnalyzer {
     bool SkipSpace();
     bool IsKeyword(std::string);
     TokenType FindKeywordIndex(std::string);
-    Token ScanIdOrKeyword();
-    Token ScanNumber();
+    Token ScanAlpha();
 };
 
 #endif  //__LEXER__H__
