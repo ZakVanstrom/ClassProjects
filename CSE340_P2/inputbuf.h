@@ -6,6 +6,8 @@
 
 #include <string>
 
+using namespace std;
+
 class InputBuffer {
   public:
     void GetChar(char&);
@@ -13,7 +15,7 @@ class InputBuffer {
     bool EndOfInput();
 
   private:
-    std::vector<char> input_buffer;
+    vector<char> input_buffer;
 };
 
 #endif  //__INPUT_BUFFER__H__
