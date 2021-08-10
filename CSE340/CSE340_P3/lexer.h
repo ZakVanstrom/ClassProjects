@@ -11,12 +11,12 @@
 
 using namespace std;
 
-// ------- token types -------------------
-
-typedef enum { END_OF_FILE = 0,
-    PUBLIC, PRIVATE, EQUAL, COLON,
-    COMMA, SEMICOLON, LBRACE, RBRACE,
-    ID, ERROR
+// Token Types
+typedef enum { 
+	INT, REAL, BOOL, TRUE, FALSE, IF, WHILE, SWITCH, 
+	CASE, NOT, PLUS, MINUS, MULT, DIV, GREATER, LESS, GTEQ, LTEQ, 
+	NOTEQUAL, LPAREN, RPAREN, NUM, REALNUM, PUBLIC, PRIVATE, EQUAL, 
+	COLON, COMMA, SEMICOLON, LBRACE, RBRACE, ID
 } TokenType;
 
 class Token {
@@ -155,7 +155,7 @@ class SymbolTable {
 		}
 		return scope;
 	}
-
+		// Testing Function
 	void print_variables() {
 		for(int i = 0; i < scopes.size(); i++) {
 			cout << endl << "  Scope " << i << endl;
@@ -170,7 +170,6 @@ class SymbolTable {
 			cout << endl << endl;
 		}
 	}
-
 };
 
 class Parser {
@@ -194,6 +193,7 @@ class Parser {
     void pop_tokens();
     void remove_tokens(int i);
     void add_token(Token);
+	// Testing Functions
     void print_globals();
     void print_tokens();
     void print_scopes();

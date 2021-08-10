@@ -12,18 +12,20 @@
 
 using namespace std;
 
-string reserved[] = { "END_OF_FILE",
-    "PUBLIC", "PRIVATE", "EQUAL", "COLON",
-    "COMMA", "SEMICOLON", "LBRACE", "RBRACE",
-    "ID", "ERROR"
+string reserved[] = {
+	"INT", "REAL", "BOOL", "TRUE", "FALSE", "IF", "WHILE", "SWITCH", 
+	"CASE", "NOT", "PLUS", "MINUS", "MULT", "DIV", "GREATER", "LESS", "GTEQ", "LTEQ", 
+	"NOTEQUAL", "LPAREN", "RPAREN", "NUM", "REALNUM", "PUBLIC", "PRIVATE", "EQUAL", 
+	"COLON", "COMMA", "SEMICOLON", "LBRACE", "RBRACE", "ID"
 };
 
 #define KEYWORDS_COUNT 2
 string keyword[] = { "public", "private"};
 
+// Begin LEXICAL ANALYZER
 LexicalAnalyzer::LexicalAnalyzer() {
     tmp.lexeme = "";
-    tmp.token_type = ERROR;
+    // tmp.token_type = ERROR;
 }
 
 bool LexicalAnalyzer::SkipSpace() {
@@ -46,14 +48,12 @@ bool LexicalAnalyzer::SkipSpace() {
 bool LexicalAnalyzer::SkipComment() {
     char c;
 
-    // Check first character as '/'
     input.GetChar(c);
     if (input.EndOfInput() || c != '/') {
         input.UngetChar(c);
         return false;
     }
 
-    // Check second character as '/'
     input.GetChar(c);
     if(c != '/') {
         input.UngetChar(c);
@@ -61,12 +61,13 @@ bool LexicalAnalyzer::SkipComment() {
         return false;
     }
 
-    while(!input.EndOfInput() && c != '\n')
+    while(!input.EndOfInput() && c != '\n') {
         input.GetChar(c);
+	}
 
-
-    if(input.EndOfInput() || c == '\n')
-    	input.UngetChar(c);
+    if(input.EndOfInput() || c == '\n') {
+		input.UngetChar(c);
+	}
 
     return true;
 }
@@ -79,6 +80,7 @@ bool LexicalAnalyzer::IsKeyword(string s) {
     return false;
 }
 
+/*
 TokenType LexicalAnalyzer::FindKeywordIndex(string s) {
     for (int i = 0; i < KEYWORDS_COUNT; i++) {
         if (s == keyword[i])
@@ -86,6 +88,7 @@ TokenType LexicalAnalyzer::FindKeywordIndex(string s) {
     }
     return ERROR;
 }
+*/
 
 Token LexicalAnalyzer::ScanAlpha() {
     char c;
@@ -107,7 +110,7 @@ Token LexicalAnalyzer::ScanAlpha() {
         if (!input.EndOfInput())
             input.UngetChar(c);
         tmp.lexeme = "";
-        tmp.token_type = ERROR;
+        //tmp.token_type = ERROR;
     }
 
     return tmp;
@@ -163,21 +166,24 @@ Token LexicalAnalyzer::GetToken() {
             if (isalpha(c)) {
                 input.UngetChar(c);
                 return ScanAlpha();
-            } else if (input.EndOfInput())
-                tmp.token_type = END_OF_FILE;
+            } 
+			/*
+			else if (input.EndOfInput())
+            	tmp.token_type = END_OF_FILE;
             else
-                tmp.token_type = ERROR;
-
+            	tmp.token_type = ERROR;
+			*/
         return tmp;
     }
 }
+// End LEXICAL ANALYZER
 
 
+// Begin PARSER
 void Parser::parse_program() {
 	i = 0;
 	parse_global_vars();
 	parse_scope();
-	//cout << "Finished" << endl;
 }
 
 void Parser::parse_global_vars() {
@@ -243,6 +249,7 @@ void Parser::parse_scope() {
 		syntax_error();
 
 	newScope.name = tok.lexeme;
+
 	if(currentScope == "")
 		currentScope = newScope.name;
 	else {
@@ -253,9 +260,10 @@ void Parser::parse_scope() {
 
 	tok = lexer.GetToken();
 	add_token(tok);
-	if(tok.token_type != LBRACE)
+	if(tok.token_type != LBRACE) {
 		syntax_error();
-
+	}
+		
 	parse_public_vars();
 
 	parse_private_vars();
@@ -269,7 +277,6 @@ void Parser::parse_scope() {
 	}
 
 	currentScope = symbols.get_scope_by_name(currentScope).parent;
-
 }
 
 bool Parser::parse_public_vars() {
@@ -413,28 +420,6 @@ void Parser::parse_stmt() {
 	remove_tokens(4);
 }
 
-void Parser::syntax_error() {
-	cout << "Syntax Error\n";
-	//cout << i << " " << tokens.back().lexeme << " Syntax Error\n";
-	exit(1);
-}
-
-void Parser::print_globals() {
-	cout << "	Current Globals" << endl;
-	for(int i = 0; i < symbols.globals.size(); i++) {
-		cout << "	" << symbols.globals.at(i) << endl;
-	}
-	cout << endl;
-}
-
-void Parser::print_tokens() {
-	cout << "	Current Tokens" << endl;
-	for(int i = tokens.size()-1; i >= 0; i--) {
-		cout << "	" << tokens.at(i).lexeme << endl;
-	}
-	cout << endl;
-}
-
 void Parser::pop_tokens() {
 	Token tok;
 	int size = tokens.size();
@@ -462,6 +447,30 @@ void Parser::remove_tokens(int i) {
 	}
 }
 
+void Parser::syntax_error() {
+	cout << "Syntax Error\n";
+	exit(1);
+}
+
+	// Begin PARSER Testing Functions
+void Parser::print_globals() {
+	cout << "	Current Globals" << endl;
+	for(int i = 0; i < symbols.globals.size(); i++) {
+		cout << "	" << symbols.globals.at(i) << endl;
+	}
+	cout << endl;
+}
+
+void Parser::print_tokens() {
+	cout << "	Current Tokens" << endl;
+	for(int i = tokens.size()-1; i >= 0; i--)
+		cout << "	" << tokens.at(i).lexeme << endl;
+	cout << endl;
+}
+	// End PARSER Testing Functions
+// End PARSER
+
+// Begin MAIN
 int main() {
     Parser parser;
 
@@ -471,5 +480,4 @@ int main() {
 
     parser.symbols.generateAssignments();
 }
-
-
+// End MAIN
