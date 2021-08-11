@@ -107,10 +107,10 @@ class SymbolTable {
 	string find_reference(string var, string scopeName) {
 		Scope s = get_scope_by_name(scopeName);
 
-		if( find_string(s.privateVars, var) > -1 )
+		if(find_string(s.privateVars, var) >= 0)
 			return s.name;
 
-		if( find_string(s.publicVars, var) > -1 )
+		if(find_string(s.publicVars, var) >= 0)
 			return s.name;
 
 		while(s.parent != "") {
@@ -119,13 +119,12 @@ class SymbolTable {
 					s = scopes.at(i);
 				}
 			}
-			if( find_string(s.publicVars, var) > -1)
+			if(find_string(s.publicVars, var) >= 0)
 				return s.name;
 		}
 
-		if( find_string(globals, var) > -1 )
+		if(find_string(globals, var) >= 0 )
 			return "__global__variable__";
-
 		return "";
 	}
 
