@@ -28,9 +28,12 @@ class Token {
 
 class LexicalAnalyzer {
   public:
+	Token GenTok(TokenType type, string lex);
     Token GetToken();
     TokenType UngetToken(Token);
-    LexicalAnalyzer();
+    TokenType FindKeywordIndex(string);
+
+    //LexicalAnalyzer();
 
   private:
     std::vector<Token> tokens;
@@ -40,7 +43,6 @@ class LexicalAnalyzer {
     //void SkipComment();
     //void SkipSpace();
     bool IsKeyword(string);
-    TokenType FindKeywordIndex(string);
     Token ScanAlpha();
 };
 

@@ -88,15 +88,15 @@ bool LexicalAnalyzer::IsKeyword(string s) {
     return false;
 }
 
-/*
+
 TokenType LexicalAnalyzer::FindKeywordIndex(string s) {
     for (int i = 0; i < KEYWORDS_COUNT; i++) {
         if (s == keyword[i])
             return (TokenType) (i + 1);
     }
-    return ERROR;
+    return NUM;
 }
-*/
+
 
 Token LexicalAnalyzer::ScanAlpha() {
     char c;
@@ -152,7 +152,7 @@ TokenType LexicalAnalyzer::UngetToken(Token tok)
     return tok.token_type;
 }
 
-Token GenTok(TokenType type, string lex) {
+Token LexicalAnalyzer::GenTok(TokenType type, string lex) {
 	Token tok;
 	tok.lexeme = lex;
 	tok.token_type = type;
