@@ -1,4 +1,3 @@
-// Comment on a line by itself
 xyz, it, c4;
 
 hello {
@@ -9,6 +8,8 @@ hello {
     xyz = it;
     c4 = dd;
   }
+// Comment on a line by itself
+// Followed by another comment
   world2 {
     public: xyz, c4;
 

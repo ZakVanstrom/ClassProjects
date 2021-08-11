@@ -14,9 +14,9 @@ using namespace std;
 // Token Types
 typedef enum { 
 	INT, REAL, BOOL, TRUE, FALSE, IF, WHILE, SWITCH, 
-	CASE, NOT, PLUS, MINUS, MULT, DIV, GREATER, LESS, GTEQ, LTEQ, 
-	NOTEQUAL, LPAREN, RPAREN, NUM, REALNUM, PUBLIC, PRIVATE, EQUAL, 
-	COLON, COMMA, SEMICOLON, LBRACE, RBRACE, ID
+	CASE, PUBLIC, PRIVATE, NOT, PLUS, MINUS, MULT, DIV, GREATER, LESS, GTEQ, LTEQ, 
+	NOTEQUAL, LPAREN, RPAREN, NUM, REALNUM,  EQUAL, 
+	COLON, COMMA, SEMICOLON, LBRACE, RBRACE, ID, ERROR
 } TokenType;
 
 class Token {
@@ -180,7 +180,7 @@ class Parser {
 	LexicalAnalyzer lexer;
 	string currentScope;
 	void parse_program();
-	void syntax_error();
+	//void syntax_error();
   private:
 	vector<Token> tokens;
 	int i = 0;

@@ -14,13 +14,18 @@ using namespace std;
 
 string reserved[] = {
 	"INT", "REAL", "BOOL", "TRUE", "FALSE", "IF", "WHILE", "SWITCH", 
-	"CASE", "NOT", "PLUS", "MINUS", "MULT", "DIV", "GREATER", "LESS", "GTEQ", "LTEQ", 
-	"NOTEQUAL", "LPAREN", "RPAREN", "NUM", "REALNUM", "PUBLIC", "PRIVATE", "EQUAL", 
-	"COLON", "COMMA", "SEMICOLON", "LBRACE", "RBRACE", "ID"
+	"CASE", "PUBLIC", "PRIVATE", "NOT", "PLUS", "MINUS", "MULT", "DIV", "GREATER", "LESS", "GTEQ", "LTEQ", 
+	"NOTEQUAL", "LPAREN", "RPAREN", "NUM", "REALNUM", "EQUAL", 
+	"COLON", "COMMA", "SEMICOLON", "LBRACE", "RBRACE", "ID", "ERROR"
 };
 
 #define KEYWORDS_COUNT 11
 string keyword[] = { "int", "real", "bool", "true", "false", "if", "while", "switch", "case", "public", "private"};
+
+void syntax_error() {
+	cout << "Syntax Error\n";
+	exit(1);
+}
 
 // Begin LEXICAL ANALYZER
 /*
@@ -92,9 +97,9 @@ bool LexicalAnalyzer::IsKeyword(string s) {
 TokenType LexicalAnalyzer::FindKeywordIndex(string s) {
     for (int i = 0; i < KEYWORDS_COUNT; i++) {
         if (s == keyword[i])
-            return (TokenType) (i + 1);
+            return (TokenType) (i);
     }
-    return NUM;
+    return ERROR;
 }
 
 
@@ -123,7 +128,7 @@ Token LexicalAnalyzer::ScanAlpha() {
 			input.GetChar(c);
 		}
 		if(lexeme.back() != '0') {
-			// return error!!
+			syntax_error();
 		}
 
 		if(c == '.') {
@@ -161,6 +166,7 @@ Token LexicalAnalyzer::GenTok(TokenType type, string lex) {
 
 Token LexicalAnalyzer::GetToken() {
     char c;
+	Token tok;
 
     if (!tokens.empty()) {
         tmp = tokens.back();
@@ -174,19 +180,27 @@ Token LexicalAnalyzer::GetToken() {
 	input.GetChar(c);
 	tmp.lexeme = "";
 
+
 	while (1) {
 		switch (c) {
+			case '\n':
+				input.GetChar(c);
+				break;
 			case ' ':
 				input.GetChar(c);
 				break;
 			case '!':
-				return GenTok(NOT, "!");
+				tok = GenTok(NOT, "!");
+				break;
 			case '+':
-				return GenTok(PLUS, "+");
+				tok = GenTok(PLUS, "+");
+				break;
 			case '-':
-				return GenTok(MINUS, "-");
+				tok = GenTok(MINUS, "-");
+				break;
 			case '*':
-				return GenTok(MULT, "*");
+				tok = GenTok(MULT, "*");
+				break;
 			case '/':
 				input.GetChar(c);
 				switch (c) {
@@ -199,53 +213,70 @@ Token LexicalAnalyzer::GetToken() {
 							break;
 					default:
 						input.UngetChar(c);
-						return GenTok(DIV, "/");
+						tok = GenTok(DIV, "/");
 				}
 				break;
 			case '>':
 				input.GetChar(c);
 				switch (c) {
 					case '=':
-						return GenTok(GTEQ, ">=");
+						tok = GenTok(GTEQ, ">=");
+						break;
 					default:
 						input.UngetChar(c);
-						return GenTok(GREATER, "<");
+						tok = GenTok(GREATER, "<");
 				}
 				break;
 			case '<':
 				input.GetChar(c);
 				switch (c) {
 					case '=':
-						return GenTok(LTEQ, "<=");
+						tok = GenTok(LTEQ, "<=");
+						break;
 					case '>':
-						return GenTok(NOTEQUAL, "<>");
+						tok = GenTok(NOTEQUAL, "<>");
+						break;
 					default:
 						input.UngetChar(c);
-						return GenTok(LESS, "<");
+						tok = GenTok(LESS, "<");
 				}
 				break;
 			case '(':
-				return GenTok(LPAREN, "(");
+				tok = GenTok(LPAREN, "(");
+				break;
 			case ')':
-				return GenTok(RPAREN, ")");
+				tok = GenTok(RPAREN, ")");
+				break;
 			case '=':
-				return GenTok(EQUAL, "=");
+				tok = GenTok(EQUAL, "=");
+				break;
 			case ':':
-				return GenTok(COLON, ":");
+				tok = GenTok(COLON, ":");
+				break;
 			case ',':
-				return GenTok(COMMA, ",");
+				tok = GenTok(COMMA, ",");
+				break;
 			case ';':
-				return GenTok(SEMICOLON, ";");
+				tok = GenTok(SEMICOLON, ";");
+				break;
 			case '{':
-				return GenTok(LBRACE, "{");
+				tok = GenTok(LBRACE, "{");
+				break;
 			case '}':
-				return GenTok(RBRACE, "}");
+				tok = GenTok(RBRACE, "}");
+				break;
 			default:
 				if (isalpha(c)) {
 					input.UngetChar(c);
-					return ScanAlpha();
+					tok = ScanAlpha();
 				}
-				return GenTok(ID, "uh what the fuck happened?");
+				else {
+					syntax_error();
+				}
+		}
+		if(tok.lexeme != "") {
+			//cout << reserved[tok.token_type] << ", '" << tok.lexeme << "'" << endl;
+			return tok;
 		}
 	}
 }
@@ -520,11 +551,6 @@ void Parser::remove_tokens(int i) {
 	}
 }
 
-void Parser::syntax_error() {
-	cout << "Syntax Error\n";
-	exit(1);
-}
-
 	// Begin PARSER Testing Functions
 void Parser::print_globals() {
 	cout << "	Current Globals" << endl;
@@ -542,6 +568,8 @@ void Parser::print_tokens() {
 }
 	// End PARSER Testing Functions
 // End PARSER
+
+
 
 // Begin MAIN
 int main() {

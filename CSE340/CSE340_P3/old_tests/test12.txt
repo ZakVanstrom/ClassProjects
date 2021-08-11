@@ -10,7 +10,7 @@ hello {
   }
   world2 {
     public: xyz, tmp;
-
+    
     xyz = rst;
     tmp = abc;
   }
