@@ -19,15 +19,18 @@ string reserved[] = {
 	"COLON", "COMMA", "SEMICOLON", "LBRACE", "RBRACE", "ID"
 };
 
-#define KEYWORDS_COUNT 2
-string keyword[] = { "public", "private"};
+#define KEYWORDS_COUNT 11
+string keyword[] = { "int", "real", "bool", "true", "false", "if", "while", "switch", "case", "public", "private"};
 
 // Begin LEXICAL ANALYZER
+/*
 LexicalAnalyzer::LexicalAnalyzer() {
     tmp.lexeme = "";
-    // tmp.token_type = ERROR;
+	tmp.token_type = ERROR;
 }
+*/
 
+/*
 bool LexicalAnalyzer::SkipSpace() {
     char c;
     bool space_encountered = false;
@@ -44,9 +47,12 @@ bool LexicalAnalyzer::SkipSpace() {
 
     return space_encountered;
 }
+*/
 
-bool LexicalAnalyzer::SkipComment() {
+/*
+void LexicalAnalyzer::SkipComment() {
     char c;
+
 
     input.GetChar(c);
     if (input.EndOfInput() || c != '/') {
@@ -61,6 +67,7 @@ bool LexicalAnalyzer::SkipComment() {
         return false;
     }
 
+
     while(!input.EndOfInput() && c != '\n') {
         input.GetChar(c);
 	}
@@ -69,8 +76,9 @@ bool LexicalAnalyzer::SkipComment() {
 		input.UngetChar(c);
 	}
 
-    return true;
+    //return true;
 }
+*/
 
 bool LexicalAnalyzer::IsKeyword(string s) {
     for (int i = 0; i < KEYWORDS_COUNT; i++) {
@@ -94,32 +102,61 @@ Token LexicalAnalyzer::ScanAlpha() {
     char c;
     input.GetChar(c);
 
+	string lexeme;
+	TokenType type;
+
     if (isalpha(c)) {
-        tmp.lexeme = "";
         while (!input.EndOfInput() && isalnum(c)) {
-            tmp.lexeme += c;
+            lexeme += c;
             input.GetChar(c);
         }
         if (!input.EndOfInput())
             input.UngetChar(c);
-        if (IsKeyword(tmp.lexeme))
-            tmp.token_type = FindKeywordIndex(tmp.lexeme);
+        if (IsKeyword(lexeme))
+			type = FindKeywordIndex(lexeme);
         else
-            tmp.token_type = ID;
-    } else {
+            type = ID;
+    } else if(isnumber(c) && c != '0'){
+		type = NUM;
+		while(!input.EndOfInput() & isnumber(c)) {
+			lexeme += c;
+			input.GetChar(c);
+		}
+		if(lexeme.back() != '0') {
+			// return error!!
+		}
+
+		if(c == '.') {
+			lexeme += c;
+			input.GetChar(c);
+			while(!input.EndOfInput() && isnumber(c)) {
+				lexeme += c;
+				input.GetChar(c);
+			}
+			type = REALNUM;
+		}
+
+		return GenTok(type, lexeme);
+    }
+	else {
         if (!input.EndOfInput())
             input.UngetChar(c);
-        tmp.lexeme = "";
-        //tmp.token_type = ERROR;
-    }
+	}
 
-    return tmp;
+    return GenTok(type, lexeme);
 }
 
 TokenType LexicalAnalyzer::UngetToken(Token tok)
 {
     tokens.push_back(tok);;
     return tok.token_type;
+}
+
+Token GenTok(TokenType type, string lex) {
+	Token tok;
+	tok.lexeme = lex;
+	tok.token_type = type;
+	return tok;
 }
 
 Token LexicalAnalyzer::GetToken() {
@@ -131,50 +168,86 @@ Token LexicalAnalyzer::GetToken() {
         return tmp;
     }
 
-    while(SkipSpace() || SkipComment()) {
-    }
+    //while(SkipSpace()) {
+    //}
 
-    input.GetChar(c);
-    tmp.lexeme = "";
+	input.GetChar(c);
+	tmp.lexeme = "";
 
-    switch (c) {
-        case '=':
-            tmp.token_type = EQUAL;
-            tmp.lexeme = "=";
-            return tmp;
-        case ':':
-            tmp.token_type = COLON;
-            tmp.lexeme = ":";
-            return tmp;
-        case ',':
-            tmp.token_type = COMMA;
-            tmp.lexeme = ",";
-            return tmp;
-        case ';':
-            tmp.token_type = SEMICOLON;
-            tmp.lexeme = ";";
-            return tmp;
-        case '{':
-            tmp.token_type = LBRACE;
-            tmp.lexeme = "{";
-            return tmp;
-        case '}':
-            tmp.token_type = RBRACE;
-            tmp.lexeme = "}";
-            return tmp;
-        default:
-            if (isalpha(c)) {
-                input.UngetChar(c);
-                return ScanAlpha();
-            } 
-			/*
-			else if (input.EndOfInput())
-            	tmp.token_type = END_OF_FILE;
-            else
-            	tmp.token_type = ERROR;
-			*/
-        return tmp;
-    }
+	while (1) {
+		switch (c) {
+			case ' ':
+				input.GetChar(c);
+				break;
+			case '!':
+				return GenTok(NOT, "!");
+			case '+':
+				return GenTok(PLUS, "+");
+			case '-':
+				return GenTok(MINUS, "-");
+			case '*':
+				return GenTok(MULT, "*");
+			case '/':
+				input.GetChar(c);
+				switch (c) {
+					case '/':
+							// Skip Comment
+						    while(!input.EndOfInput() && c != '\n') {
+        						input.GetChar(c);
+							}
+							input.UngetChar(c);
+							break;
+					default:
+						input.UngetChar(c);
+						return GenTok(DIV, "/");
+				}
+				break;
+			case '>':
+				input.GetChar(c);
+				switch (c) {
+					case '=':
+						return GenTok(GTEQ, ">=");
+					default:
+						input.UngetChar(c);
+						return GenTok(GREATER, "<");
+				}
+				break;
+			case '<':
+				input.GetChar(c);
+				switch (c) {
+					case '=':
+						return GenTok(LTEQ, "<=");
+					case '>':
+						return GenTok(NOTEQUAL, "<>");
+					default:
+						input.UngetChar(c);
+						return GenTok(LESS, "<");
+				}
+				break;
+			case '(':
+				return GenTok(LPAREN, "(");
+			case ')':
+				return GenTok(RPAREN, ")");
+			case '=':
+				return GenTok(EQUAL, "=");
+			case ':':
+				return GenTok(COLON, ":");
+			case ',':
+				return GenTok(COMMA, ",");
+			case ';':
+				return GenTok(SEMICOLON, ";");
+			case '{':
+				return GenTok(LBRACE, "{");
+			case '}':
+				return GenTok(RBRACE, "}");
+			default:
+				if (isalpha(c)) {
+					input.UngetChar(c);
+					return ScanAlpha();
+				}
+				return GenTok(ID, "uh what the fuck happened?");
+		}
+	}
 }
 // End LEXICAL ANALYZER
 

@@ -37,10 +37,10 @@ class LexicalAnalyzer {
     Token tmp;
     InputBuffer input;
 
-    bool SkipComment();
-    bool SkipSpace();
-    bool IsKeyword(std::string);
-    TokenType FindKeywordIndex(std::string);
+    //void SkipComment();
+    //void SkipSpace();
+    bool IsKeyword(string);
+    TokenType FindKeywordIndex(string);
     Token ScanAlpha();
 };
 
