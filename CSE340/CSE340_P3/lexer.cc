@@ -116,9 +116,9 @@ Token LexicalAnalyzer::ScanAlpha() {
 			type = FindKeywordIndex(lexeme);
         else
             type = ID;
-    } else if(isnumber(c) && c != '0'){
+    } else if(isdigit(c) && c != '0'){
 		type = NUM;
-		while(!input.EndOfInput() & isnumber(c)) {
+		while(!input.EndOfInput() & isdigit(c)) {
 			lexeme += c;
 			input.GetChar(c);
 		}
@@ -129,7 +129,7 @@ Token LexicalAnalyzer::ScanAlpha() {
 		if(c == '.') {
 			lexeme += c;
 			input.GetChar(c);
-			while(!input.EndOfInput() && isnumber(c)) {
+			while(!input.EndOfInput() && isdigit(c)) {
 				lexeme += c;
 				input.GetChar(c);
 			}
