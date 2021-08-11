@@ -27,79 +27,12 @@ void syntax_error() {
 	exit(1);
 }
 
-// Begin LEXICAL ANALYZER
-/*
-LexicalAnalyzer::LexicalAnalyzer() {
-    tmp.lexeme = "";
-	tmp.token_type = ERROR;
-}
-*/
-
-/*
-bool LexicalAnalyzer::SkipSpace() {
-    char c;
-    bool space_encountered = false;
-
-    input.GetChar(c);
-
-    while (!input.EndOfInput() && isspace(c)) {
-        space_encountered = true;
-        input.GetChar(c);
-    }
-
-    if (!input.EndOfInput())
-        input.UngetChar(c);
-
-    return space_encountered;
-}
-*/
-
-/*
-void LexicalAnalyzer::SkipComment() {
-    char c;
-
-
-    input.GetChar(c);
-    if (input.EndOfInput() || c != '/') {
-        input.UngetChar(c);
-        return false;
-    }
-
-    input.GetChar(c);
-    if(c != '/') {
-        input.UngetChar(c);
-        input.UngetChar('/');
-        return false;
-    }
-
-
-    while(!input.EndOfInput() && c != '\n') {
-        input.GetChar(c);
-	}
-
-    if(input.EndOfInput() || c == '\n') {
-		input.UngetChar(c);
-	}
-
-    //return true;
-}
-*/
-
-bool LexicalAnalyzer::IsKeyword(string s) {
-    for (int i = 0; i < KEYWORDS_COUNT; i++) {
-        if (s == keyword[i])
-            return true;
-    }
-    return false;
-}
-
-
-TokenType LexicalAnalyzer::FindKeywordIndex(string s) {
+TokenType LexicalAnalyzer::find_keyword(string s) {
     for (int i = 0; i < KEYWORDS_COUNT; i++) {
         if (s == keyword[i])
             return (TokenType) (i);
     }
-    return ERROR;
+    return ID;
 }
 
 
@@ -117,10 +50,7 @@ Token LexicalAnalyzer::ScanAlpha() {
         }
         if (!input.EndOfInput())
             input.UngetChar(c);
-        if (IsKeyword(lexeme))
-			type = FindKeywordIndex(lexeme);
-        else
-            type = ID;
+		type = find_keyword(lexeme);
     } else if(isdigit(c) && c != '0'){
 		type = NUM;
 		while(!input.EndOfInput() & isdigit(c)) {

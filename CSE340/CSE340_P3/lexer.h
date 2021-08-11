@@ -31,18 +31,12 @@ class LexicalAnalyzer {
 	Token GenTok(TokenType type, string lex);
     Token GetToken();
     TokenType UngetToken(Token);
-    TokenType FindKeywordIndex(string);
-
-    //LexicalAnalyzer();
+    TokenType find_keyword(string);
 
   private:
     std::vector<Token> tokens;
     Token tmp;
     InputBuffer input;
-
-    //void SkipComment();
-    //void SkipSpace();
-    bool IsKeyword(string);
     Token ScanAlpha();
 };
 
@@ -180,7 +174,6 @@ class Parser {
 	LexicalAnalyzer lexer;
 	string currentScope;
 	void parse_program();
-	//void syntax_error();
   private:
 	vector<Token> tokens;
 	int i = 0;
