@@ -175,6 +175,8 @@ class Parser {
 	void parse_program();
   private:
 	vector<Token> tokens;
+	Token force_parse(TokenType);
+	bool try_parse(TokenType, int);
 	int i = 0;
 	void parse_global_vars();
     int parse_var_list();
@@ -183,8 +185,8 @@ class Parser {
     bool parse_private_vars();
     void parse_stmt_list();
     void parse_stmt();
-    void pop_single_token();
-    void pop_tokens();
+	void pop_tokens(int);
+    void pop_all_tokens();
     void remove_tokens(int i);
     void add_token(Token);
 	// Testing Functions

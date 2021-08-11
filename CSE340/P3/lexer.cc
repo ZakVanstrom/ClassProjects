@@ -215,22 +215,16 @@ Token LexicalAnalyzer::GetToken() {
 
 // Begin PARSER
 void Parser::parse_program() {
-	i = 0;
 	parse_global_vars();
 	parse_scope();
 }
 
 void Parser::parse_global_vars() {
-	i = 1;
-	Token tok;
-
 	if(!parse_var_list())
 		return;
 
-	tok = lexer.GetToken();
-	add_token(tok);
-	if(tok.token_type != SEMICOLON) {
-		pop_tokens();
+	if(try_parse(SEMICOLON, 0)) {
+		pop_all_tokens();
 		return;
 	}
 
@@ -241,48 +235,22 @@ void Parser::parse_global_vars() {
 }
 
 int Parser::parse_var_list() {
-	i = 2;
-	Token tok;
-
-	tok = lexer.GetToken();
-	add_token(tok);
-	if(tok.token_type != ID) {
-		pop_single_token();
+	if(try_parse(ID, 1))
 		return 0;
-	}
-
 	int variableCount = 1;
-
 	while(1) {
-		tok = lexer.GetToken();
-		add_token(tok);
-		if(tok.token_type != COMMA) {
-			pop_single_token();
+		if(try_parse(COMMA, 1))
 			return variableCount;
-		}
-
-		tok = lexer.GetToken();
-		add_token(tok);
-		if(tok.token_type != ID) {
-			pop_single_token();
-			pop_single_token();
+		if(try_parse(ID, 2)) 
 			return variableCount;
-		}
 		variableCount++;
 	}
 }
 
 void Parser::parse_scope() {
-	i = 3;
-	Token tok;
 	Scope newScope;
 
-	tok = lexer.GetToken();
-	add_token(tok);
-	if(tok.token_type != ID)
-		syntax_error();
-
-	newScope.name = tok.lexeme;
+	newScope.name = force_parse(ID).lexeme;
 
 	if(currentScope == "")
 		currentScope = newScope.name;
@@ -292,11 +260,7 @@ void Parser::parse_scope() {
 	}
 	symbols.scopes.push_back(newScope);
 
-	tok = lexer.GetToken();
-	add_token(tok);
-	if(tok.token_type != LBRACE) {
-		syntax_error();
-	}
+	force_parse(LBRACE);
 		
 	parse_public_vars();
 
@@ -304,31 +268,17 @@ void Parser::parse_scope() {
 
 	parse_stmt_list();
 
-	tok = lexer.GetToken();
-	add_token(tok);
-	if(tok.token_type != RBRACE) {
-		syntax_error();
-	}
+	force_parse(RBRACE);
 
 	currentScope = symbols.get_scope_by_name(currentScope).parent;
 }
 
 bool Parser::parse_public_vars() {
-	i = 4;
-	Token tok;
 
-	tok = lexer.GetToken();
-	add_token(tok);
-	if(tok.token_type != PUBLIC) {
-		pop_single_token();
+	if(try_parse(PUBLIC, 1)) 
 		return false;
-	}
 
-	tok = lexer.GetToken();
-	add_token(tok);
-	if(tok.token_type != COLON) {
-		syntax_error();
-	}
+	force_parse(COLON);
 
 	int variableCount = parse_var_list();
 	if(variableCount == 0) {
@@ -341,30 +291,16 @@ bool Parser::parse_public_vars() {
 
 	remove_tokens(variableCount);
 
-	tok = lexer.GetToken();
-	add_token(tok);
-	if(tok.token_type != SEMICOLON) {
-		syntax_error();
-	}
+	force_parse(SEMICOLON);
+
 	return true;
 }
 
 bool Parser::parse_private_vars() {
-	Token tok;
-	i = 5;
-
-	tok = lexer.GetToken();
-	add_token(tok);
-	if(tok.token_type != PRIVATE) {
-		pop_single_token();
+	if(try_parse(PRIVATE, 1))
 		return false;
-	}
 
-	tok = lexer.GetToken();
-	add_token(tok);
-	if(tok.token_type != COLON) {
-		syntax_error();
-	}
+	force_parse(COLON);
 
 	int variableCount = parse_var_list();
 	if(variableCount == 0) {
@@ -377,84 +313,69 @@ bool Parser::parse_private_vars() {
 
 	remove_tokens(variableCount);
 
-	tok = lexer.GetToken();
-	add_token(tok);
-	if(tok.token_type != SEMICOLON) {
-		syntax_error();
-	}
+	force_parse(SEMICOLON);
+
 	return true;
 }
 
 void Parser::parse_stmt_list() {
-	i = 6;
-	vector<string> statements;
 	Token tok;
-	int count = tokens.size();
 
-	tok = lexer.GetToken();
-	add_token(tok);
-
-	if(tok.token_type != ID){
-		syntax_error();
-	}
+	force_parse(ID);
 
 	while(tok.token_type != RBRACE) {
-		pop_single_token();
+		pop_tokens(1);
 		parse_stmt();
 		tok = lexer.GetToken();
 		add_token(tok);
 	}
 
-	pop_single_token();
+	pop_tokens(1);
 }
 
 void Parser::parse_stmt() {
-	i = 7;
-	Token tok;
-	string l;
-	string r;
+	Assignment ass;
 
-	tok = lexer.GetToken();
-	add_token(tok);
-	if(tok.token_type != ID) {
-		syntax_error();
-	}
+	ass.lVal = force_parse(ID).lexeme;
 
-	l = tok.lexeme;
-
-	tok = lexer.GetToken();
-	add_token(tok);
-	if(tok.token_type != EQUAL) {
-		pop_single_token();
-		pop_single_token();
+	if(try_parse(EQUAL, 2)) {
 		parse_scope();
 		return;
 	}
 
-	tok = lexer.GetToken();
-	add_token(tok);
-	if(tok.token_type != ID) {
-		syntax_error();
-	}
+	ass.rVal = force_parse(ID).lexeme;
 
-	r = tok.lexeme;
+	force_parse(SEMICOLON);
 
-	tok = lexer.GetToken();
-	add_token(tok);
-	if(tok.token_type != SEMICOLON) {
-		syntax_error();
-	}
-
-	Assignment ass;
-	ass.lVal = l;
-	ass.rVal = r;
 	ass.scope = currentScope;
 	symbols.add_ass(ass);
 
 	remove_tokens(4);
 }
 
-void Parser::pop_tokens() {
+Token Parser::force_parse(TokenType t) {
+	Token tok = lexer.GetToken();
+	add_token(tok);
+	if(tok.token_type != t)
+		syntax_error();
+	return tok;
+}
+
+bool Parser::try_parse(TokenType t, int pop) {
+	Token tok = lexer.GetToken();
+	add_token(tok);
+	if(tok.token_type != t){
+		pop_tokens(pop);
+		return true;
+	}
+	return false;
+}
+
+void Parser::add_token(Token tok) {
+	tokens.push_back(tok);
+}
+
+void Parser::pop_all_tokens() {
 	Token tok;
 	int size = tokens.size();
 	for(int i = 0; i < size; i++) {
@@ -464,15 +385,13 @@ void Parser::pop_tokens() {
 	}
 }
 
-void Parser::add_token(Token tok) {
-	tokens.push_back(tok);
-}
-
-void Parser::pop_single_token() {
+void Parser::pop_tokens(int toks) {
 	Token tok;
-	tok = tokens.back();
-	tokens.pop_back();
-	lexer.UngetToken(tok);
+	for(int i = 0; i < toks; i++) {
+		tok = tokens.back();
+		tokens.pop_back();
+		lexer.UngetToken(tok);
+	}
 }
 
 void Parser::remove_tokens(int i) {
