@@ -19,6 +19,8 @@ typedef enum {
 	COLON, COMMA, SEMICOLON, LBRACE, RBRACE, ID, ERROR
 } TokenType;
 
+
+
 class Token {
   public:
     std::string lexeme;
@@ -28,18 +30,18 @@ class Token {
 
 class LexicalAnalyzer {
   public:
-	Token GenTok(TokenType type, string lex);
     Token GetToken();
     TokenType UngetToken(Token);
     TokenType find_keyword(string);
 
   private:
     std::vector<Token> tokens;
-    Token tmp;
     InputBuffer input;
     Token ScanAlpha();
+	Token ScanDigit();
 };
 
+/*
 class Scope {
   public:
 	string name;
@@ -47,16 +49,53 @@ class Scope {
 	vector<string> publicVars;
 	vector<string> privateVars;
 };
+*/
 
-class Assignment {
+class Variable {
   public:
-	string lVal;
-	string rVal;
-	string scope;
+	string name;
+	string type;
+};
+
+class Operator {
+  public:
+	TokenType t;
+
+
 };
 
 class SymbolTable {
   public:
+	vector<Variable> vars;
+	vector<Operator> ops;
+	void add_variable(string n, TokenType t) {
+		Variable v;
+		v.name = n;
+		if(t == INT)
+			v.type = "int";
+		if (t == REAL)
+			v.type = "real";
+		if (t == BOOL)
+			v.type = "bool";
+		if (t == ERROR)
+			v.type = "?";
+		vars.push_back(v);
+	}
+	void print_variables() {
+		for(int i = 0; i < vars.size(); i++) {
+			cout << vars.at(i).name << ": " << vars.at(i).type << " #" << endl;
+		}
+	}
+	string find_var_type(string s) {
+		for(int i = 0; i < vars.size(); i++) {
+			if(vars.at(i).name == s) {
+				return vars.at(i).type;
+			}
+		}
+		add_variable(s, ERROR);
+		return "?";
+	}
+	/*
 	vector<Scope> scopes;
 	vector<Assignment> assignments;
 	vector<string> globals;
@@ -150,6 +189,7 @@ class SymbolTable {
 		}
 		return scope;
 	}
+	
 		// Testing Function
 	void print_variables() {
 		for(int i = 0; i < scopes.size(); i++) {
@@ -165,34 +205,52 @@ class SymbolTable {
 			cout << endl << endl;
 		}
 	}
+	*/
 };
+
 
 class Parser {
   public:
 	SymbolTable symbols;
 	LexicalAnalyzer lexer;
-	string currentScope;
+	//string currentScope;
+	vector<string> newVars;
 	void parse_program();
   private:
 	vector<Token> tokens;
 	Token force_parse(TokenType);
-	bool try_parse(TokenType, int);
+	TokenType test_parse();
+	TokenType try_parse(TokenType, int);
+	TokenType try_parse_list(vector<TokenType>, int);
 	int i = 0;
+	// Grammars
 	void parse_global_vars();
+	void parse_var_decl_list();
+	int parse_var_decl();
     int parse_var_list();
-    void parse_scope();
-    bool parse_public_vars();
-    bool parse_private_vars();
+	TokenType parse_type_name();
+	void parse_body();
     void parse_stmt_list();
-    void parse_stmt();
+    bool parse_stmt();
+	void parse_assignment_stmt();
+	void parse_expression();
+	TokenType parse_unary_operator();
+	TokenType parse_binary_operator();
+	TokenType parse_primary();
+	void parse_if_stmt();
+	void parse_while_stmt();
+	void parse_switch_stmt();
+	void parse_case_list();
+	void parse_case();
+	Token pop();
+
+	// Token Functions
 	void pop_tokens(int);
     void pop_all_tokens();
     void remove_tokens(int i);
     void add_token(Token);
 	// Testing Functions
-    void print_globals();
     void print_tokens();
-    void print_scopes();
 };
 
 #endif  //__LEXER__H__

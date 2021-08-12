@@ -22,9 +22,23 @@ string reserved[] = {
 #define KEYWORDS_COUNT 11
 string keyword[] = { "int", "real", "bool", "true", "false", "if", "while", "switch", "case", "public", "private"};
 
-void syntax_error() {
-	cout << "Syntax Error\n";
+int i = 0;
+int lineNumber = 1;
+
+Token GenTok(TokenType type, string lex) {
+	Token tok;
+	tok.lexeme = lex;
+	tok.token_type = type;
+	return tok;
+}
+
+void syntax_error(string constraint) {
+	cout << "TYPE MISMATCH " << lineNumber << " " << constraint << endl;
 	exit(1);
+}
+
+void print_status(int i) {
+	//cout << endl << i << endl;
 }
 
 TokenType LexicalAnalyzer::find_keyword(string s) {
@@ -43,42 +57,42 @@ Token LexicalAnalyzer::ScanAlpha() {
 	string lexeme;
 	TokenType type;
 
-    if (isalpha(c)) {
-        while (!input.EndOfInput() && isalnum(c)) {
-            lexeme += c;
-            input.GetChar(c);
-        }
-        if (!input.EndOfInput())
-            input.UngetChar(c);
-		type = find_keyword(lexeme);
-    } else if(isdigit(c) && c != '0'){
-		type = NUM;
-		while(!input.EndOfInput() & isdigit(c)) {
-			lexeme += c;
-			input.GetChar(c);
-		}
-		if(lexeme.back() != '0') {
-			syntax_error();
-		}
-
-		if(c == '.') {
-			lexeme += c;
-			input.GetChar(c);
-			while(!input.EndOfInput() && isdigit(c)) {
-				lexeme += c;
-				input.GetChar(c);
-			}
-			type = REALNUM;
-		}
-
-		return GenTok(type, lexeme);
-    }
-	else {
-        if (!input.EndOfInput())
-            input.UngetChar(c);
+	while (!input.EndOfInput() && isalnum(c)) {
+		lexeme += c;
+		input.GetChar(c);
 	}
+	if (!input.EndOfInput())
+		input.UngetChar(c);
+	type = find_keyword(lexeme);
 
     return GenTok(type, lexeme);
+}
+
+Token LexicalAnalyzer::ScanDigit() {
+	print_status(20);
+	TokenType type = NUM;
+	string lexeme;
+	char c;
+    input.GetChar(c);
+
+	while(!input.EndOfInput() & isdigit(c)) {
+		lexeme += c;
+		input.GetChar(c);
+	}
+
+	input.UngetChar(c);
+
+	if(c == '.') {
+		lexeme += c;
+		input.GetChar(c);
+		while(!input.EndOfInput() && isdigit(c)) {
+			lexeme += c;
+			input.GetChar(c);
+		}
+		type = REALNUM;
+	}
+
+	return GenTok(type, lexeme);
 }
 
 TokenType LexicalAnalyzer::UngetToken(Token tok)
@@ -87,34 +101,23 @@ TokenType LexicalAnalyzer::UngetToken(Token tok)
     return tok.token_type;
 }
 
-Token LexicalAnalyzer::GenTok(TokenType type, string lex) {
-	Token tok;
-	tok.lexeme = lex;
-	tok.token_type = type;
-	return tok;
-}
-
 Token LexicalAnalyzer::GetToken() {
     char c;
 	Token tok;
 
     if (!tokens.empty()) {
-        tmp = tokens.back();
+        tok = tokens.back();
         tokens.pop_back();
-        return tmp;
+        return tok;
     }
 
-    //while(SkipSpace()) {
-    //}
-
 	input.GetChar(c);
-	tmp.lexeme = "";
-
 
 	while (1) {
 		switch (c) {
 			case '\n':
 				input.GetChar(c);
+				lineNumber++;
 				break;
 			case ' ':
 				input.GetChar(c);
@@ -200,8 +203,12 @@ Token LexicalAnalyzer::GetToken() {
 					input.UngetChar(c);
 					tok = ScanAlpha();
 				}
+				else if (isdigit(c) && c != '0') {
+					input.UngetChar(c);
+					tok = ScanDigit();
+				}
 				else {
-					syntax_error();
+					syntax_error("C2");
 				}
 		}
 		if(tok.lexeme != "") {
@@ -212,163 +219,224 @@ Token LexicalAnalyzer::GetToken() {
 }
 // End LEXICAL ANALYZER
 
-
 // Begin PARSER
 void Parser::parse_program() {
+	print_status(1);
 	parse_global_vars();
-	parse_scope();
+	parse_body();
 }
 
 void Parser::parse_global_vars() {
-	if(!parse_var_list())
-		return;
+	print_status(2);
+	parse_var_decl_list();
+}
 
-	if(try_parse(SEMICOLON, 0)) {
-		pop_all_tokens();
-		return;
+void Parser::parse_var_decl_list(){
+	print_status(3);
+	while(parse_var_decl()) {
 	}
+}
 
-	for(int i = 0; i < tokens.size(); i+=2) {
-		symbols.globals.push_back(tokens.at(i).lexeme);
+int Parser::parse_var_decl(){
+	print_status(4);
+	int varCount = parse_var_list();
+	if(varCount == 0)
+		return 0;
+	force_parse(COLON);
+	TokenType t = parse_type_name();
+	//cout << reserved[t] << endl;
+	if(t == ERROR)
+		syntax_error("C2");
+	for(int i = 0; i < varCount; i++) {
+		symbols.add_variable(newVars.at(i), t);
 	}
-	tokens.clear();
+	force_parse(SEMICOLON);
+	return varCount;
 }
 
 int Parser::parse_var_list() {
-	if(try_parse(ID, 1))
+	print_status(5);
+	
+	if(try_parse(ID, 1) == ERROR)
 		return 0;
+	newVars.push_back(pop().lexeme);
 	int variableCount = 1;
 	while(1) {
-		if(try_parse(COMMA, 1))
+		if(try_parse(COMMA, 1) == ERROR)
 			return variableCount;
-		if(try_parse(ID, 2)) 
+		if(try_parse(ID, 2) == ERROR) 
 			return variableCount;
 		variableCount++;
+		newVars.push_back(pop().lexeme);
+		pop();
 	}
 }
 
-void Parser::parse_scope() {
-	Scope newScope;
+TokenType Parser::parse_type_name(){
+	print_status(6);
+	vector<TokenType> operators = {INT, REAL, BOOL};
+	TokenType type = try_parse_list(operators, 1);
+	return type;
+}
 
-	newScope.name = force_parse(ID).lexeme;
-
-	if(currentScope == "")
-		currentScope = newScope.name;
-	else {
-		newScope.parent = currentScope;
-		currentScope = newScope.name;
-	}
-	symbols.scopes.push_back(newScope);
-
+void Parser::parse_body(){
+	print_status(7);
 	force_parse(LBRACE);
-		
-	parse_public_vars();
-
-	parse_private_vars();
-
 	parse_stmt_list();
-
 	force_parse(RBRACE);
-
-	currentScope = symbols.get_scope_by_name(currentScope).parent;
-}
-
-bool Parser::parse_public_vars() {
-
-	if(try_parse(PUBLIC, 1)) 
-		return false;
-
-	force_parse(COLON);
-
-	int variableCount = parse_var_list();
-	if(variableCount == 0) {
-		syntax_error();
-	}
-
-	for(int i = 0; i < variableCount*2; i += 2) {
-		symbols.scopes.at(symbols.find_scope_index(currentScope)).publicVars.push_back(tokens.at(tokens.size()-1-i).lexeme);
-	}
-
-	remove_tokens(variableCount);
-
-	force_parse(SEMICOLON);
-
-	return true;
-}
-
-bool Parser::parse_private_vars() {
-	if(try_parse(PRIVATE, 1))
-		return false;
-
-	force_parse(COLON);
-
-	int variableCount = parse_var_list();
-	if(variableCount == 0) {
-		syntax_error();
-	}
-
-	for(int i = 0; i < variableCount*2; i+= 2) {
-		symbols.scopes.at(symbols.find_scope_index(currentScope)).privateVars.push_back(tokens.at(tokens.size()-1-i).lexeme);
-	}
-
-	remove_tokens(variableCount);
-
-	force_parse(SEMICOLON);
-
-	return true;
 }
 
 void Parser::parse_stmt_list() {
-	Token tok;
-
-	force_parse(ID);
-
-	while(tok.token_type != RBRACE) {
-		pop_tokens(1);
-		parse_stmt();
-		tok = lexer.GetToken();
-		add_token(tok);
-	}
-
-	pop_tokens(1);
+	print_status(8);
+	while(parse_stmt()) {}
 }
 
-void Parser::parse_stmt() {
-	Assignment ass;
+bool Parser::parse_stmt() {
+	print_status(9);
+	TokenType type = test_parse();
+	if(type == IF)
+		parse_if_stmt();
+	else if(type == WHILE)
+		parse_while_stmt();
+	else if(type == SWITCH)
+		parse_switch_stmt();
+	else if(type == ID) 
+		parse_assignment_stmt();
+	else
+		return false;
+	return true;
+}
 
-	ass.lVal = force_parse(ID).lexeme;
+void Parser::parse_assignment_stmt(){
+	print_status(10);
+	string t1;
+	string t2;
+	
+	force_parse(ID);
+	Token tok = pop();
+	t1 = symbols.find_var_type(tok.lexeme);
+	force_parse(EQUAL);
 
-	if(try_parse(EQUAL, 2)) {
-		parse_scope();
-		return;
-	}
 
-	ass.rVal = force_parse(ID).lexeme;
+	parse_expression();
+	
+	tok = pop();
+	t2 = symbols.find_var_type(tok.lexeme);
+
+	if(t1 != t2)
+		syntax_error("C1");
 
 	force_parse(SEMICOLON);
+}
+void Parser::parse_expression(){
+	print_status(11);
+	TokenType t;
+	if (parse_primary() != ERROR) {
 
-	ass.scope = currentScope;
-	symbols.add_ass(ass);
-
-	remove_tokens(4);
+	}
+	else if (parse_binary_operator() != ERROR) {
+		parse_expression();
+		parse_expression();
+	}
+	else if (parse_unary_operator() != ERROR) {
+		parse_expression();
+	}
+	else {
+		syntax_error("C2");
+	}
+}
+TokenType Parser::parse_unary_operator() {
+	print_status(12);
+	return try_parse(NOT, 1);
+}
+TokenType Parser::parse_binary_operator() {
+	print_status(13);
+	vector<TokenType> operators = {GREATER, LESS, GTEQ, LTEQ, EQUAL, NOTEQUAL, PLUS, MINUS, MULT, DIV};
+	return try_parse_list(operators, 1);
+}
+TokenType Parser::parse_primary(){
+	print_status(14);
+	vector<TokenType> operators = {ID, NUM, REALNUM, TRUE, FALSE};
+	return try_parse_list(operators, 1);
+}
+void Parser::parse_if_stmt(){
+	print_status(15);
+	force_parse(IF);
+	force_parse(LPAREN);
+	parse_expression();
+	force_parse(RPAREN);
+	parse_body();
+}
+void Parser::parse_while_stmt(){
+	print_status(16);
+	force_parse(WHILE);
+	force_parse(LPAREN);
+	parse_expression();
+	force_parse(RPAREN);
+	parse_body();
+}
+void Parser::parse_switch_stmt(){
+	print_status(17);
+	force_parse(SWITCH);
+	force_parse(LPAREN);
+	parse_expression();
+	force_parse(RPAREN);
+	force_parse(LBRACE);
+	parse_case_list();
+	force_parse(RBRACE);
+}
+void Parser::parse_case_list(){
+	print_status(18);
+	TokenType type = test_parse();
+	while (type == CASE) {
+		parse_case();
+		type = test_parse();
+	}
+}
+void Parser::parse_case(){
+	print_status(19);
+	force_parse(CASE);
+	force_parse(NUM);
+	force_parse(COLON);
+	parse_body();
 }
 
+	// Helper Functions
 Token Parser::force_parse(TokenType t) {
 	Token tok = lexer.GetToken();
 	add_token(tok);
 	if(tok.token_type != t)
-		syntax_error();
+		syntax_error("C2");
 	return tok;
 }
 
-bool Parser::try_parse(TokenType t, int pop) {
+TokenType Parser::try_parse(TokenType t, int pop) {
 	Token tok = lexer.GetToken();
 	add_token(tok);
 	if(tok.token_type != t){
 		pop_tokens(pop);
-		return true;
+		return ERROR;
 	}
-	return false;
+	return tok.token_type;
+}
+
+TokenType Parser::test_parse() {
+	Token tok = lexer.GetToken();
+	add_token(tok);
+	pop_tokens(1);
+	return tok.token_type;
+}
+
+TokenType Parser::try_parse_list(vector<TokenType> list, int pop) {
+	Token tok = lexer.GetToken();
+	add_token(tok);
+	for(int i = 0; i < list.size(); i++) {
+		if(list.at(i) == tok.token_type)
+			return tok.token_type;
+	}
+	pop_tokens(pop);
+	tok.token_type = ERROR;
+	return tok.token_type;
 }
 
 void Parser::add_token(Token tok) {
@@ -394,40 +462,27 @@ void Parser::pop_tokens(int toks) {
 	}
 }
 
+Token Parser::pop() {
+	Token tok = tokens.back();
+	tokens.pop_back();
+	return tok;
+}
+
 void Parser::remove_tokens(int i) {
 	for(int j = 0; j < i; j++) {
 		tokens.pop_back();
 	}
 }
 
-	// Begin PARSER Testing Functions
-void Parser::print_globals() {
-	cout << "	Current Globals" << endl;
-	for(int i = 0; i < symbols.globals.size(); i++) {
-		cout << "	" << symbols.globals.at(i) << endl;
+void Parser::print_tokens(){ 
+	for(int i = 0; i < tokens.size(); i++) {
+		cout << tokens.at(i).token_type << ", " << tokens.at(i).lexeme << endl;
 	}
-	cout << endl;
 }
-
-void Parser::print_tokens() {
-	cout << "	Current Tokens" << endl;
-	for(int i = tokens.size()-1; i >= 0; i--)
-		cout << "	" << tokens.at(i).lexeme << endl;
-	cout << endl;
-}
-	// End PARSER Testing Functions
 // End PARSER
 
-
-
-// Begin MAIN
 int main() {
     Parser parser;
-
-    //cout << "Start Running Parsing" << endl;
     parser.parse_program();
-    //cout << "Finish Running Parsing" << endl;
-
-    parser.symbols.generateAssignments();
+    parser.symbols.print_variables();
 }
-// End MAIN

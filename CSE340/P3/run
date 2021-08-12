@@ -2,41 +2,48 @@
 g++ -c lexer.cc inputbuf.cc
 g++ -o main.exe lexer.o inputbuf.o
 
-for i in {1..12};
-do
-	echo "Test: $i"
-	cat "tests/test$i.txt" | ./main.exe > "tests/result$i.txt"
+# for i in {1..12};
+# do
+# 	echo "Test: $i"
+# 	cat "tests/test$i.txt" | ./main.exe > "tests/result$i.txt"
 
-	#cat "results/result$i.txt"
-	#cat "tests/result$i.txt"
+# 	#cat "results/result$i.txt"
+# 	#cat "tests/result$i.txt"
 	
-	if cmp -s "results/result$i.txt" "tests/result$i.txt"; then
-    	echo "PASSED!"
-	else
-    	echo "failed... :("
-	fi
+# 	if cmp -s "results/result$i.txt" "tests/result$i.txt"; then
+#     	echo "PASSED!"
+# 	else
+#     	echo "failed... :("
+# 	fi
 
-	rm "tests/result$i.txt"
-	echo
-done
+# 	rm "tests/result$i.txt"
+# 	echo
+# done
 
 for i in {1..15};
 do
 	echo "New Tests - Test: $i"
 	if [ "$i" -lt 10 ]; then
 		cat "new_tests/test0$i.txt" | ./main.exe > "new_tests/test_result$i.txt"
+		if cmp -s "new_tests/test0$i.txt.expected" "new_tests/test_result$i.txt"; then
+			echo "PASSED!"
+		else
+			echo "Expected:"
+			cat "new_tests/test0$i.txt.expected" 
+			echo "Received:"
+			cat "new_tests/test_result$i.txt"
+		fi
 	else
 		cat "new_tests/test$i.txt" | ./main.exe > "new_tests/test_result$i.txt"
+		if cmp -s "new_tests/test$i.txt.expected" "new_tests/test_result$i.txt"; then
+			echo "PASSED!"
+		else
+			echo "Expected:"
+			cat "new_tests/test$i.txt.expected" 
+			echo "Received:"
+			cat "new_tests/test_result$i.txt"
+		fi
 	fi
-	
-	if cmp -s "new_tests/test0$i.txt.expected" "new_tests/test_result$i.txt"; then
-    	echo "PASSED!"
-	else
-    	echo "failed... :("
-	fi
-
-	# cat "new_tests/test_result$i.txt"
-
 	rm "new_tests/test_result$i.txt"
 	echo
 done
